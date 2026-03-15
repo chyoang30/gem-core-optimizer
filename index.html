@@ -493,7 +493,7 @@ function activeEffects(core){const pts=corePoints(core);return GRADES[core.grade
 function renderGemList(){
   const el=document.getElementById('gem-list');
   document.getElementById('gem-count').textContent='('+gems.length+')';
-  if(!gems.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:10px">젬을 추가해주세요.</div>';return;}
+  if(!gems.length){el.innerHTML='<div style="font-size:12px;color:var(--text3); white-space: nowrap; padding:10px">젬을 추가해주세요.</div>';return; }
   el.innerHTML=gems.map(g=>`
     <div class="gem-item ${g.used?'used':''}" onclick="${g.used?'':('assignGem('+g.id+')')}">
       <div style="display:flex;align-items:center;gap:6px">
