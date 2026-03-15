@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>젬 최적화 도구</title>
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --bg2: #ffffff;
+    --bg3: #eeede8;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --text: #1a1a18;
+    --text2: #5f5e5a;
+    --text3: #888780;
+    --blue-bg: #e6f1fb;
+    --blue-text: #185fa5;
+    --blue-border: #b5d4f4;
+    --green-bg: #eaf3de;
+    --green-text: #3b6d11;
+    --green-border: #c0dd97;
+    --warn-bg: #faeeda;
+    --warn-text: #854f0b;
+    --warn-border: #fac775;
+    --danger-bg: #fcebeb;
+    --danger-text: #a32d2d;
+    --danger-border: #f7c1c1;
+    /* 등급 색상 */
+    --hero-bg: #eeedfe;    --hero-text: #3c3489;    --hero-border: #afa9ec;
+    --legend-bg: #faeeda;  --legend-text: #854f0b;  --legend-border: #fac775;
+    --relic-bg: #fff0e0;   --relic-text: #8a4200;   --relic-border: #ffb86b;
+    --ancient-bg: #fffff0; --ancient-text: #7a7200;  --ancient-border: #e8e48a;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #252523;
+      --bg3: #2e2e2b;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --text: #e8e6dc;
+      --text2: #a8a79f;
+      --text3: #6b6a63;
+      --blue-bg: #042c53;
+      --blue-text: #85b7eb;
+      --blue-border: #185fa5;
+      --green-bg: #173404;
+      --green-text: #97c459;
+      --green-border: #3b6d11;
+      --warn-bg: #412402;
+      --warn-text: #fac775;
+      --warn-border: #854f0b;
+      --danger-bg: #501313;
+      --danger-text: #f09595;
+      --danger-border: #a32d2d;
+      --hero-bg: #26215c;    --hero-text: #afa9ec;    --hero-border: #534ab7;
+      --legend-bg: #412402;  --legend-text: #fac775;  --legend-border: #854f0b;
+      --relic-bg: #3d2000;   --relic-text: #ffb86b;   --relic-border: #8a4200;
+      --ancient-bg: #333300; --ancient-text: #e8e48a;  --ancient-border: #7a7200;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .subtitle { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+
+  .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .tab-btn {
+    padding: 9px 18px; font-size: 13px; background: transparent;
+    border: none; border-bottom: 2px solid transparent;
+    cursor: pointer; color: var(--text2); margin-bottom: -1px;
+    transition: all 0.15s; font-weight: 500;
+  }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
+  .tab-btn:hover { color: var(--text); }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .section-title { font-size: 12px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+
+  #gem-count{
+    font-weight:600;
+  }
+
+  .form-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .form-row label { font-size: 13px; color: var(--text2); min-width: 80px; }
+  input[type=text], input[type=number] {
+    padding: 7px 10px; border: 1px solid var(--border2); border-radius: var(--radius);
+    background: var(--bg); color: var(--text); font-size: 13px;
+  }
+  input[type=text]:focus, input[type=number]:focus {
+    outline: none; border-color: var(--blue-text);
+  }
+  input[type=number] { width: 72px; }
+  .hint { font-size: 11px; color: var(--text3); }
+
+  .btn {
+    padding: 8px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500;
+    border: 1px solid var(--border2); background: var(--bg); color: var(--text);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn:hover { background: var(--bg3); }
+  .btn-primary {
+    background: var(--blue-bg); color: var(--blue-text); border-color: var(--blue-border);
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-optimize {
+    width: 100%; padding: 12px; font-size: 15px; font-weight: 600;
+    background: var(--blue-bg); color: var(--blue-text); border: 1px solid var(--blue-border);
+    border-radius: var(--radius-lg); cursor: pointer; transition: all 0.15s; margin-bottom: 14px;
+  }
+  .btn-optimize:hover { opacity: 0.85; }
+
+  /* Gem list */
+  .gem-list { display: grid; grid-template-columns: repeat(auto-fill, 100px); gap: 6px; }
+  .gem-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg3);
+    cursor: pointer;
+    transition: all 0.15s;
+    gap: 4px;
+  }
+  .gem-item:hover:not(.used) { border-color: var(--border2); background: var(--bg2); min-height: 28px; }
+  .gem-item.used { opacity: 0.4; cursor: default; }
+  .gem-item-name { font-size: 23px; font-weight: 500; white-space: nowrap; }
+  .gem-item-stat { font-size: 11px; color: var(--text2); }
+  .mini-badge { font-size: 10px; padding: 1px 5px; border-radius: 10px; font-weight: 500; }
+  .badge-will { background: var(--warn-bg); color: var(--warn-text); }
+  .badge-pt   { background: var(--blue-bg);  color: var(--blue-text);  }
+  .badge-used { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); white-space: nowrap; }
+  .remove-btn { font-size: 11px; cursor: pointer; color: var(--text3); padding: 2px 5px; border-radius: 4px; transition: color 0.1s; }
+  .remove-btn:hover { color: var(--danger-text); }
+
+  /* Core select */
+  .core-select-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  select {
+    padding: 6px 10px; border: 1px solid var(--border2); border-radius: var(--radius);
+    background: var(--bg); color: var(--text); font-size: 13px; cursor: pointer;
+  }
+
+  /* Core card */
+  .core-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 10px; }
+  .core-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .core-card-title { font-size: 15px; font-weight: 600; }
+  .grade-selector { display: flex; gap: 4px; flex-wrap: wrap; }
+  .grade-btn {
+    font-size: 11px; padding: 3px 9px; border: 1px solid var(--border2);
+    border-radius: 12px; background: transparent; cursor: pointer; color: var(--text2); transition: all 0.12s;
+  }
+  .grade-btn:hover { background: var(--bg3); }
+  .grade-btn.active-hero   { background: var(--hero-bg);   color: var(--hero-text);   border-color: var(--hero-border);   }
+  .grade-btn.active-legend { background: var(--legend-bg); color: var(--legend-text); border-color: var(--legend-border); }
+  .grade-btn.active-relic  { background: var(--relic-bg);  color: var(--relic-text);  border-color: var(--relic-border);  }
+  .grade-btn.active-ancient{ background: var(--ancient-bg);color: var(--ancient-text);border-color: var(--ancient-border);}
+
+  .slots-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+  .slot-box {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 8px; background: var(--bg3); min-height: 58px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; transition: all 0.12s;
+  }
+  .slot-box.filled { background: var(--bg2); border-color: var(--border2); }
+  .slot-empty-label { font-size: 11px; color: var(--text3); }
+  .slot-gem-name { font-size: 11px; font-weight: 500; text-align: center; }
+  .slot-gem-stat { font-size: 10px; color: var(--text2); text-align: center; margin-top: 2px; }
+  .slot-remove { position: absolute; top: 3px; right: 5px; font-size: 10px; color: var(--text3); cursor: pointer; }
+  .slot-remove:hover { color: var(--danger-text); }
+
+  .will-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .will-bar-bg { flex: 1; height: 5px; background: var(--bg3); border-radius: 3px; overflow: hidden; border: 1px solid var(--border); }
+  .will-bar-fill { height: 100%; background: var(--blue-text); border-radius: 3px; transition: width 0.3s; }
+  .will-label { font-size: 11px; color: var(--text2); min-width: 60px; text-align: right; }
+
+  .pts-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .pt-badge {
+    font-size: 11px; padding: 2px 8px; border-radius: 10px;
+    border: 1px solid var(--border); color: var(--text3); background: var(--bg3);
+  }
+  .pt-badge.active { background: var(--green-bg); color: var(--green-text); border-color: var(--green-border); font-weight: 600; }
+  .core-stat { font-size: 11px; color: var(--text3); margin-top: 5px; }
+
+  /* Results */
+  .result-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 16px; margin-bottom: 10px;
+  }
+  .result-score { font-size: 26px; font-weight: 700; margin: 6px 0; }
+  .result-assign { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .assign-row { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+  .assign-core-lbl { font-size: 13px; font-weight: 600; min-width: 80px; }
+  .assign-chip { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--bg3); border: 1px solid var(--border); }
+  .assign-pts { font-size: 11px; color: var(--green-text); font-weight: 600; }
+  .tip-box {
+    background: var(--warn-bg); border: 1px solid var(--warn-border);
+    border-radius: var(--radius); padding: 10px 14px; font-size: 12px; color: var(--warn-text);
+    margin-top: 8px;
+  }
+
+  .import-area {
+    border: 1.5px dashed var(--border2); border-radius: var(--radius);
+    padding: 14px; text-align: center; cursor: pointer;
+    transition: all 0.15s; background: var(--bg3); margin-bottom: 8px;
+  }
+  .import-area:hover, .import-area.dragover { border-color: var(--blue-text); background: var(--blue-bg); }
+  .import-area p { font-size: 13px; color: var(--text2); margin: 0; }
+  .import-area small { font-size: 11px; color: var(--text3); }
+  textarea.paste-box {
+    width: 100%; height: 90px; resize: vertical;
+    border: 1px solid var(--border2); border-radius: var(--radius);
+    background: var(--bg); color: var(--text); font-size: 12px;
+    font-family: monospace; padding: 8px; margin-bottom: 6px;
+  }
+  textarea.paste-box:focus { outline: none; border-color: var(--blue-text); }
+  .import-result { font-size: 12px; margin-top: 6px; min-height: 18px; }
+  .import-result.ok  { color: var(--green-text); }
+  .import-result.err { color: var(--danger-text); }
+  .subtab-row { display: flex; gap: 4px; margin-bottom: 12px; }
+  .subtab-btn {
+    font-size: 12px; padding: 4px 12px; border-radius: 20px;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--text2); cursor: pointer; transition: all 0.12s;
+  }
+  .subtab-btn.active { background: var(--bg3); color: var(--text); border-color: var(--border2); font-weight: 500; }
+
+  @media (max-width: 480px) {
+    .slots-grid { grid-template-columns: repeat(2, 1fr); }
+    .form-row { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<h1>⚙️ 젬 최적화 도구</h1>
+<p class="subtitle">코어 3개에 젬을 배치해 포인트 효과를 최대화하세요</p>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('gems')">젬 관리</button>
+  <button class="tab-btn" onclick="switchTab('cores')">코어 배치</button>
+  <button class="tab-btn" onclick="switchTab('optimize')">자동 최적화</button>
+</div>
+
+<!-- TAB: GEMS -->
+<div id="tab-gems">
+  <div class="card">
+    <div class="subtab-row">
+      <button class="subtab-btn active" onclick="switchSubtab('manual')">직접 입력</button>
+      <button class="subtab-btn" onclick="switchSubtab('paste')">붙여넣기</button>
+      <button class="subtab-btn" onclick="switchSubtab('csv')">CSV 업로드</button>
+    </div>
+
+    <!-- 직접 입력 -->
+    <div id="subtab-manual">
+      <div class="form-row">
+        <label>필요 의지력</label>
+        <input type="number" id="gem-will" min="3" max="7" value="5">
+        <span class="hint">3 ~ 7</span>
+      </div>
+      <div class="form-row">
+        <label>부여 포인트</label>
+        <input type="number" id="gem-pt" min="1" max="5" value="3">
+        <span class="hint">1 ~ 5</span>
+      </div>
+      <button class="btn btn-primary" onclick="addGem()" style="margin-top:4px">+ 젬 추가</button>
+    </div>
+
+    <!-- 붙여넣기 -->
+    <div id="subtab-paste" style="display:none">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:8px">엑셀/구글시트에서 <b>의지력, 포인트</b> 두 열을 복사해 붙여넣으세요.<br>탭 또는 쉼표로 구분, 한 줄에 젬 하나.</p>
+      <textarea class="paste-box" id="paste-input" placeholder="예:&#10;5	3&#10;4	2&#10;7	5&#10;3	1"></textarea>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-primary" onclick="importPaste()">가져오기</button>
+        <button class="btn" onclick="document.getElementById('paste-input').value=''">초기화</button>
+        <span class="import-result" id="paste-result"></span>
+      </div>
+    </div>
+
+    <!-- CSV 업로드 -->
+    <div id="subtab-csv" style="display:none">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:8px">CSV 파일을 드래그하거나 클릭해서 업로드하세요.<br>첫 번째 열: 의지력, 두 번째 열: 포인트 (헤더 행 자동 건너뜀)</p>
+      <div class="import-area" id="csv-drop-area" onclick="document.getElementById('csv-file').click()">
+        <p>📂 CSV 파일을 여기에 드래그하거나 클릭해서 선택</p>
+        <small>엑셀에서 다른이름으로저장 → CSV 형식</small>
+      </div>
+      <input type="file" id="csv-file" accept=".csv,.txt" style="display:none" onchange="handleCsvFile(this)">
+      <span class="import-result" id="csv-result"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+      <div class="section-title" style="margin-bottom:0">젬 목록 <span id="gem-count" style="color:var(--text3)">(0)</span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn" onclick="clearGems()">전체 삭제</button>
+        <span style="font-size:12px;color:var(--text2)">배치할 코어:</span>
+        <select id="target-core">
+          <option value="0">코어 1</option>
+          <option value="1">코어 2</option>
+          <option value="2">코어 3</option>
+        </select>
+      </div>
+    </div>
+    <div class="gem-list" id="gem-list"></div>
+    <p style="font-size:11px;color:var(--text3);margin-top:8px">젬 클릭 → 선택한 코어에 배치 / ✕ 클릭 → 삭제</p>
+  </div>
+</div>
+
+<!-- TAB: CORES -->
+<div id="tab-cores" style="display:none">
+  <div id="cores-ui"></div>
+</div>
+
+<!-- TAB: OPTIMIZE -->
+<div id="tab-optimize" style="display:none">
+  <div class="card">
+    <div class="section-title">자동 최적화</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:12px">모든 코어를 통틀어 활성화되는 포인트 효과를 최대화하는 젬 배치를 자동으로 찾습니다.<br>유물 코어가 2개 이상일 때 17/17 조합을 우선합니다.</p>
+    <button class="btn-optimize" onclick="runOptimize()">최적 조합 찾기 →</button>
+  </div>
+  <div id="optimize-result"></div>
+</div>
+
+<script>
+const GRADES = {
+  hero:   { name:'영웅', maxWill:9,  points:[10] },
+  legend: { name:'전설', maxWill:12, points:[10,14] },
+  relic:  { name:'유물', maxWill:15, points:[10,14,17,18,19,20] },
+  ancient:{ name:'고대', maxWill:17, points:[10,14,17,18,19,20] }
+};
+
+let gems = [];
+let gid = 1;
+let cores = [
+  {grade:'relic',slots:[null,null,null,null]},
+  {grade:'relic',slots:[null,null,null,null]},
+  {grade:'relic',slots:[null,null,null,null]}
+];
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function switchSubtab(tab){
+  ['manual','paste','csv'].forEach(t=>{
+    document.getElementById('subtab-'+t).style.display = t===tab ? '' : 'none';
+  });
+  document.querySelectorAll('.subtab-btn').forEach((b,i)=>{
+    b.classList.toggle('active', ['manual','paste','csv'][i]===tab);
+  });
+}
+
+function parseGemLines(lines){
+  const added=[]; const errors=[];
+  lines.forEach((line,i)=>{
+    const raw = line.trim();
+    if(!raw) return;
+    const parts = raw.split(/[	,;]+/);
+    if(parts.length < 2){ errors.push(i+1); return; }
+    const will = parseInt(parts[0]);
+    const pt   = parseInt(parts[1]);
+    if(isNaN(will)||will<3||will>7||isNaN(pt)||pt<1||pt>5){ errors.push(i+1); return; }
+    gems.push({id:gid, will, pt, used:false});
+    gid++; added.push(1);
+  });
+  return {added:added.length, errors};
+}
+
+function importPaste(){
+  const raw = document.getElementById('paste-input').value;
+  const lines = raw.split(/\n/);
+  const {added, errors} = parseGemLines(lines);
+  const el = document.getElementById('paste-result');
+  if(added===0 && errors.length===0){
+    el.className='import-result err'; el.textContent='내용이 없습니다.'; return;
+  }
+  updateUsed(); renderGemList();
+  el.className = errors.length ? 'import-result err' : 'import-result ok';
+  el.textContent = added+'개 추가됨' + (errors.length ? ` (${errors.length}줄 오류: ${errors.slice(0,5).join(',')}번)` : '');
+}
+
+function handleCsvFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split(/\r?\n/);
+    // 헤더 행 자동 감지 (첫 줄이 숫자가 아니면 스킵)
+    const start = (lines.length>0 && isNaN(parseInt(lines[0].split(/[\t,;]/)[0]))) ? 1 : 0;
+    const {added, errors} = parseGemLines(lines.slice(start));
+    updateUsed(); renderGemList();
+    const el = document.getElementById('csv-result');
+    el.className = errors.length ? 'import-result err' : 'import-result ok';
+    el.textContent = added+'개 추가됨' + (errors.length ? ` (${errors.length}줄 건너뜀)` : '');
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
+// CSV 드래그앤드롭
+document.addEventListener('DOMContentLoaded', ()=>{
+  const area = document.getElementById('csv-drop-area');
+  if(!area) return;
+  area.addEventListener('dragover', e=>{ e.preventDefault(); area.classList.add('dragover'); });
+  area.addEventListener('dragleave', ()=>area.classList.remove('dragover'));
+  area.addEventListener('drop', e=>{
+    e.preventDefault(); area.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const lines = ev.target.result.split(/\r?\n/);
+      const start = (lines.length>0 && isNaN(parseInt(lines[0].split(/[\t,;]/)[0]))) ? 1 : 0;
+      const {added, errors} = parseGemLines(lines.slice(start));
+      updateUsed(); renderGemList();
+      const el = document.getElementById('csv-result');
+      el.className = errors.length ? 'import-result err' : 'import-result ok';
+      el.textContent = added+'개 추가됨' + (errors.length ? ` (${errors.length}줄 건너뜀)` : '');
+    };
+    reader.readAsText(file);
+  });
+});
+
+function addGem(){
+  const name = gid + '번 젬';
+  const will = parseInt(document.getElementById('gem-will').value);
+  const pt   = parseInt(document.getElementById('gem-pt').value);
+  if(isNaN(will)||will<3||will>7||isNaN(pt)||pt<1||pt>5){alert('값 범위를 확인해주세요.');return;}
+  gems.push({id:gid++,name,will,pt,used:false});
+  updateUsed(); renderGemList();
+}
+
+function removeGem(id){
+  cores.forEach(c=>{c.slots=c.slots.map(s=>s&&s.id===id?null:s);});
+  gems=gems.filter(g=>g.id!==id);
+  updateUsed(); renderGemList(); renderCores();
+}
+
+function updateUsed(){
+  const u=new Set();
+  cores.forEach(c=>c.slots.forEach(s=>{if(s)u.add(s.id);}));
+  gems.forEach(g=>{g.used=u.has(g.id);});
+}
+
+function assignGem(id){
+  const gem=gems.find(g=>g.id===id);
+  if(!gem||gem.used)return;
+  const ci=parseInt(document.getElementById('target-core').value);
+  const core=cores[ci];
+  const grade=GRADES[core.grade];
+  const usedWill=core.slots.reduce((s,x)=>s+(x?x.will:0),0);
+  if(usedWill+gem.will>grade.maxWill){alert(`의지력 초과! 현재 ${usedWill}/${grade.maxWill}, 필요 추가: ${gem.will}`);return;}
+  const si=core.slots.findIndex(s=>s===null);
+  if(si===-1){alert('슬롯이 가득 찼습니다 (최대 4개)');return;}
+  core.slots[si]=gem;
+  updateUsed(); renderGemList(); renderCores();
+}
+
+function removeFromSlot(ci,si){
+  cores[ci].slots[si]=null;
+  updateUsed(); renderGemList(); renderCores();
+}
+
+function setCoreGrade(ci,grade){
+  cores[ci].grade=grade;
+  cores[ci].slots=[null,null,null,null];
+  updateUsed(); renderGemList(); renderCores();
+}
+
+function corePoints(core){return core.slots.filter(Boolean).reduce((s,g)=>s+g.pt,0);}
+function activeEffects(core){const pts=corePoints(core);return GRADES[core.grade].points.filter(p=>pts>=p);}
+
+function renderGemList(){
+  const el=document.getElementById('gem-list');
+  document.getElementById('gem-count').textContent='('+gems.length+')';
+  if(!gems.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:10px">젬을 추가해주세요.</div>';return;}
+  el.innerHTML=gems.map(g=>`
+    <div class="gem-item ${g.used?'used':''}" onclick="${g.used?'':('assignGem('+g.id+')')}">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="mini-badge badge-will">의${g.will}</span>
+        <span class="mini-badge badge-pt">P${g.pt}</span>
+        ${g.used?'<span class="mini-badge badge-used">배치됨</span>':''}
+        <span class="remove-btn" onclick="event.stopPropagation();removeGem(${g.id})">✕</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderCores(){
+  const el=document.getElementById('cores-ui');
+  el.innerHTML=cores.map((core,ci)=>{
+    const grade=GRADES[core.grade];
+    const usedWill=core.slots.reduce((s,x)=>s+(x?x.will:0),0);
+    const pts=corePoints(core);
+    const active=activeEffects(core);
+    const pct=Math.min(100,(usedWill/grade.maxWill)*100);
+
+    const gradeBtns=Object.entries(GRADES).map(([k,v])=>
+      `<button class="grade-btn ${core.grade===k?'active-'+k:''}" onclick="setCoreGrade(${ci},'${k}')">${v.name}</button>`
+    ).join('');
+
+    const slots=core.slots.map((s,si)=>{
+      if(s)return`<div class="slot-box filled"><span class="slot-remove" onclick="removeFromSlot(${ci},${si})">✕</span><div class="slot-gem-stat">의${s.will} · P${s.pt}</div></div>`;
+      return`<div class="slot-box"><span class="slot-empty-label">빈 슬롯</span></div>`;
+    }).join('');
+
+    const ptBadges=grade.points.map(p=>`<span class="pt-badge ${active.includes(p)?'active':''}">${p}P</span>`).join('');
+
+    return`<div class="core-card">
+      <div class="core-card-header">
+        <span class="core-card-title">코어 ${ci+1}</span>
+        <div class="grade-selector">${gradeBtns}</div>
+      </div>
+      <div class="slots-grid">${slots}</div>
+      <div class="will-row">
+        <div class="will-bar-bg"><div class="will-bar-fill" style="width:${pct}%"></div></div>
+        <span class="will-label">의지력 ${usedWill}/${grade.maxWill}</span>
+      </div>
+      <div class="pts-row">${ptBadges}</div>
+      <div class="core-stat">현재 포인트: ${pts}P · 활성 효과: ${active.length}개</div>
+    </div>`;
+  }).join('');
+}
+
+function runOptimize(){
+  const el=document.getElementById('optimize-result');
+  if(!gems.length){el.innerHTML='<div class="tip-box">젬을 먼저 추가해주세요.</div>';return;}
+
+  // 포인트 가중치: 17P 최우선 → 14P → 10P → 18~20P 보너스
+  const PW = {10:10, 14:100, 17:1000, 18:1, 19:1, 20:1};
+
+  function coreScore(pts, gradeKey){
+    return GRADES[gradeKey].points.reduce((s,p)=> pts>=p ? s+(PW[p]||1) : s, 0);
+  }
+
+  // 젬을 (will, pt) 종류별로 묶어서 탐색 공간 대폭 축소
+  function buildTypes(gemList) {
+    const map = {};
+    gemList.forEach(g => {
+      const k = g.will+','+g.pt;
+      if(!map[k]) map[k] = {w:g.will, p:g.pt, cnt:0, ids:[]};
+      map[k].cnt++;
+      map[k].ids.push(g.id);
+    });
+    return Object.values(map);
+  }
+
+  // 타입 기반 서브셋 생성 (최소 1개 강제, cnt 제약 포함)
+  function subsetsTyped(types, maxSlots, maxWill) {
+    const res = [];
+    const used = new Array(types.length).fill(0);
+    function bt(i, slots, will, pts) {
+      if(slots >= 1) res.push({pts, will, used:[...used]});
+      if(slots === maxSlots || i === types.length) return;
+      for(let j=i; j<types.length; j++) {
+        const t = types[j];
+        const maxTake = Math.min(t.cnt, maxSlots-slots, Math.floor((maxWill-will)/t.w));
+        for(let k=1; k<=maxTake; k++) {
+          used[j]+=k;
+          bt(j+1, slots+k, will+t.w*k, pts+t.p*k);
+          used[j]-=k;
+        }
+      }
+    }
+    bt(0,0,0,0);
+    return res;
+  }
+
+  // 타입 배열 공유 (3코어 모두 같은 젬 풀에서 선택)
+  const types = buildTypes(gems);
+  const subsets = cores.map(c => {
+    const f = subsetsTyped(types, 4, GRADES[c.grade].maxWill);
+    f.sort((a,b) => coreScore(b.pts, c.grade) - coreScore(a.pts, c.grade));
+    return f;
+  });
+
+  // branch-and-bound 탐색: 점수 내림차순 정렬 + 조기 종료
+  let best=-1, bestA=null;
+  const topPts = subsets.map((f,ci) => f.length>0 ? coreScore(f[0].pts, cores[ci].grade) : 0);
+
+  for(const s0 of subsets[0]){
+    const sc0 = coreScore(s0.pts, cores[0].grade);
+    if(sc0 + topPts[1] + topPts[2] <= best) break;
+    for(const s1 of subsets[1]){
+      const sc01 = sc0 + coreScore(s1.pts, cores[1].grade);
+      if(sc01 + topPts[2] <= best) break;
+      // cnt 체크: s0+s1 합산 사용량
+      let ok01=true;
+      for(let i=0;i<types.length;i++){
+        if((s0.used[i]||0)+(s1.used[i]||0)>types[i].cnt){ok01=false;break;}
+      }
+      if(!ok01) continue;
+      for(const s2 of subsets[2]){
+        const sc = sc01 + coreScore(s2.pts, cores[2].grade);
+        if(sc <= best) break;
+        // cnt 체크: s0+s1+s2
+        let ok=true;
+        for(let i=0;i<types.length;i++){
+          if((s0.used[i]||0)+(s1.used[i]||0)+(s2.used[i]||0)>types[i].cnt){ok=false;break;}
+        }
+        if(!ok) continue;
+        best=sc; bestA=[s0,s1,s2];
+      }
+    }
+  }
+  // bestA를 실제 젬 id 배열로 변환
+  let bestIds = null;
+  if(bestA){
+    bestIds = bestA.map(s => {
+      const ids = [];
+      s.used.forEach((cnt,i)=>{
+        for(let k=0;k<cnt;k++) ids.push(types[i].ids[k]);
+      });
+      return ids;
+    });
+  }
+
+  if(!bestIds){el.innerHTML='<div class="tip-box">조합을 찾을 수 없습니다. 코어 등급과 의지력 조건을 확인해주세요.</div>';return;}
+
+  cores.forEach((c,i)=>{
+    c.slots=[null,null,null,null];
+    bestIds[i].forEach((id,si)=>{c.slots[si]=gems.find(g=>g.id===id)||null;});
+  });
+  updateUsed();
+
+  const totalEff=cores.reduce((s,c)=>s+activeEffects(c).length,0);
+  const assignHtml=cores.map((c,i)=>{
+    const sub=c.slots.filter(Boolean);
+    const pts=sub.reduce((s,g)=>s+g.pt,0);
+    const act=activeEffects(c);
+    const chips=sub.map(g=>`<span class="assign-chip">의${g.will} P${g.pt} </span>`).join('');
+    return`<div class="assign-row">
+      <span class="assign-core-lbl">코어 ${i+1} (${GRADES[c.grade].name})</span>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">${chips||'<span style="font-size:11px;color:var(--text3)">비어있음</span>'}</div>
+      <span class="assign-pts">${pts}P → ${act.length}효과</span>
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div class="result-card">
+      <div class="section-title">최적 결과</div>
+      <div class="result-score">총 ${totalEff}개 효과 활성화</div>
+      <div class="result-assign">${assignHtml}</div>
+    </div>
+    <div class="tip-box">결과가 코어 배치 탭에 자동 적용되었습니다.<br>10/14/17P 달성 우선 → 18~20P는 보조 보너스로 계산됩니다.</div>`;
+
+  renderGemList(); renderCores();
+}
+
+function switchTab(tab){
+  ['gems','cores','optimize'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===tab?'':'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+    b.classList.toggle('active',['gems','cores','optimize'][i]===tab);
+  });
+}
+
+function clearGems(){
+  if(!confirm("모든 젬을 삭제할까요?")) return
+  gems = []
+  gid = 1
+  cores.forEach(c=>{
+    c.slots=[null,null,null,null]
+  })
+  updateUsed()
+  renderGemList()
+  renderCores()
+}
+
+renderGemList();
+renderCores();
+</script>
+</body>
+</html>
